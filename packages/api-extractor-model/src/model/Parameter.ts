@@ -12,6 +12,7 @@ import type { Excerpt } from '../mixins/Excerpt.js';
  * @public
  */
 export interface IParameterOptions {
+	defaultExcerpt?: Excerpt;
 	isOptional: boolean;
 	isRest: boolean;
 	name: string;
@@ -42,6 +43,11 @@ export class Parameter {
 	public readonly parameterTypeExcerpt: Excerpt;
 
 	/**
+	 * An {@link Excerpt} that describes the default value for this parameter if any.
+	 */
+	public defaultExcerpt: Excerpt | undefined;
+
+	/**
 	 * The parameter name.
 	 */
 	public name: string;
@@ -61,6 +67,7 @@ export class Parameter {
 	public constructor(options: IParameterOptions) {
 		this.name = options.name;
 		this.parameterTypeExcerpt = options.parameterTypeExcerpt;
+		this.defaultExcerpt = options.defaultExcerpt;
 		this.isOptional = options.isOptional;
 		this.isRest = options.isRest;
 		this._parent = options.parent;

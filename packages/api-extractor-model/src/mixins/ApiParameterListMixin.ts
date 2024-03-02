@@ -5,6 +5,7 @@ import { InternalError } from '@rushstack/node-core-library';
 import { ApiDeclaredItem } from '../items/ApiDeclaredItem.js';
 import type { ApiItem, IApiItemJson, IApiItemConstructor, IApiItemOptions } from '../items/ApiItem.js';
 import type { DeserializerContext } from '../model/DeserializerContext.js';
+import type { IParameterOptions } from '../model/Parameter.js';
 import { Parameter } from '../model/Parameter.js';
 import type { IExcerptTokenRange } from './Excerpt.js';
 
@@ -14,6 +15,7 @@ import type { IExcerptTokenRange } from './Excerpt.js';
  * @public
  */
 export interface IApiParameterOptions {
+	defaultTokenRange?: IExcerptTokenRange;
 	isOptional: boolean;
 	isRest: boolean;
 	parameterName: string;
@@ -117,14 +119,17 @@ export function ApiParameterListMixin<TBaseClass extends IApiItemConstructor>(
 			if (this instanceof ApiDeclaredItem) {
 				if (options.parameters) {
 					for (const parameterOptions of options.parameters) {
-						const parameter: Parameter = new Parameter({
+						const parameterConstructorOptions: IParameterOptions = {
 							name: parameterOptions.parameterName,
 							parameterTypeExcerpt: this.buildExcerpt(parameterOptions.parameterTypeTokenRange),
 							// Prior to ApiJsonSchemaVersion.V_1005 this input will be undefined
 							isOptional: Boolean(parameterOptions.isOptional),
 							isRest: Boolean(parameterOptions.isRest),
 							parent: this,
-						});
+						};
+						if (parameterOptions.defaultTokenRange)
+							parameterConstructorOptions.defaultExcerpt = this.buildExcerpt(parameterOptions.defaultTokenRange);
+						const parameter: Parameter = new Parameter(parameterConstructorOptions);
 
 						this[_parameters].push(parameter);
 					}
@@ -166,12 +171,14 @@ export function ApiParameterListMixin<TBaseClass extends IApiItemConstructor>(
 
 			const parameterObjects: IApiParameterOptions[] = [];
 			for (const parameter of this.parameters) {
-				parameterObjects.push({
+				const parameterObject: IApiParameterOptions = {
 					parameterName: parameter.name,
 					parameterTypeTokenRange: parameter.parameterTypeExcerpt.tokenRange,
 					isOptional: parameter.isOptional,
 					isRest: parameter.isRest,
-				});
+				};
+				if (parameter.defaultExcerpt) parameterObject.defaultTokenRange = parameter.defaultExcerpt.tokenRange;
+				parameterObjects.push(parameterObject);
 			}
 
 			jsonObject.parameters = parameterObjects;

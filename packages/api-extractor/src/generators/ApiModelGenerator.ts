@@ -1641,12 +1641,18 @@ export class ApiModelGenerator {
 		for (const parameter of parameterNodes) {
 			const parameterTypeTokenRange: IExcerptTokenRange = ExcerptBuilder.createEmptyTokenRange();
 			nodesToCapture.push({ node: parameter.type, tokenRange: parameterTypeTokenRange });
-			parameters.push({
+			const parameterOptions: IApiParameterOptions = {
 				parameterName: parameter.name.getText().trim(),
 				parameterTypeTokenRange,
 				isOptional: this._collector.typeChecker.isOptionalParameter(parameter),
 				isRest: Boolean(parameter.dotDotDotToken),
-			});
+			};
+			if (parameter.initializer) {
+				parameterOptions.defaultTokenRange = ExcerptBuilder.createEmptyTokenRange();
+				nodesToCapture.push({ node: parameter.initializer, tokenRange: parameterOptions.defaultTokenRange });
+			}
+
+			parameters.push(parameterOptions);
 		}
 
 		return parameters;
