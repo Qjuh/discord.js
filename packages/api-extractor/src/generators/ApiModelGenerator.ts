@@ -44,7 +44,7 @@ import type * as tsdoc from '@microsoft/tsdoc';
 import { DeclarationReference, type Meaning } from '@microsoft/tsdoc/lib-commonjs/beta/DeclarationReference.js';
 import { JsonFile, Path } from '@rushstack/node-core-library';
 import * as ts from 'typescript';
-import { AstDeclaration } from '../analyzer/AstDeclaration.js';
+import type { AstDeclaration } from '../analyzer/AstDeclaration.js';
 import type { AstEntity } from '../analyzer/AstEntity.js';
 import { AstImport } from '../analyzer/AstImport.js';
 import type { AstModule } from '../analyzer/AstModule.js';
@@ -1398,30 +1398,56 @@ export class ApiModelGenerator {
 			parent?.interfaces.find((clas) => clas.name === name);
 
 		if (apiTypeAlias === undefined) {
-			const file = ts.createSourceFile(
-				`${name}.ts`,
-				`${isExported ? 'export ' : ''}type ${name} = ${this._collector.typeChecker.typeToString(
-					this._collector.typeChecker.getTypeAtLocation(astDeclaration.declaration),
-					astDeclaration.declaration,
-					ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias,
-				)};`,
-				this._collector.program.getCompilerOptions().target ?? ts.ScriptTarget.Latest,
-				true,
-				ts.ScriptKind.TS,
+			// const file = ts.createSourceFile(
+			// 	`${name}.ts`,
+			// 	`${isExported ? 'export ' : ''}type ${name} = ${this._collector.typeChecker.typeToString(
+			// 		this._collector.typeChecker.getTypeAtLocation(astDeclaration.declaration),
+			// 		astDeclaration.declaration,
+			// 		ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias,
+			// 	)};`,
+			// 	this._collector.program.getCompilerOptions().target ?? ts.ScriptTarget.Latest,
+			// 	true,
+			// 	ts.ScriptKind.TS,
+			// );
+			// const typeAliasDeclaration = file.getChildAt(0, file).getChildAt(0, file) as ts.TypeAliasDeclaration;
+			const newTypeAliasText = this._collector.typeChecker.typeToString(
+				this._collector.typeChecker.getTypeAtLocation(astDeclaration.declaration),
+				astDeclaration.declaration,
+				ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias,
 			);
-			const typeAliasDeclaration = file.getChildAt(0, file).getChildAt(0, file) as ts.TypeAliasDeclaration;
-			const internalAstDeclaration = new AstDeclaration({
-				astSymbol: new AstSymbol({
-					followedSymbol: this._collector.typeChecker.getSymbolAtLocation(typeAliasDeclaration)!,
-					isExternal: false,
-					localName: name,
-					nominalAnalysis: false,
-					parentAstSymbol: undefined,
-					rootAstSymbol: undefined,
-				}),
-				declaration: typeAliasDeclaration,
-				parent: undefined,
-			});
+			const range = ts.createTextChangeRange(
+				ts.createTextSpanFromBounds(astDeclaration.declaration.pos, astDeclaration.declaration.end),
+				newTypeAliasText.length,
+			);
+			const oldText = astDeclaration.declaration.getSourceFile().text;
+			const newText = `${oldText.slice(0, astDeclaration.declaration.pos)}${newTypeAliasText}${oldText.slice(astDeclaration.declaration.end)}`;
+			console.log(range, oldText.length, newText.length);
+			const file = astDeclaration.declaration.getSourceFile().update(newText, range);
+			// const internalAstDeclaration = new AstDeclaration({
+			// 	astSymbol: new AstSymbol({
+			// 		followedSymbol: this._collector.typeChecker.getSymbolAtLocation(typeAliasDeclaration)!,
+			// 		isExternal: false,
+			// 		localName: name,
+			// 		nominalAnalysis: false,
+			// 		parentAstSymbol: undefined,
+			// 		rootAstSymbol: undefined,
+			// 	}),
+			// 	declaration: typeAliasDeclaration,
+			// 	parent: undefined,
+			// });
+			let typeAliasDeclaration: ts.TypeAliasDeclaration | undefined;
+			const handleNode = (node: ts.Node) => {
+				if (ts.isIdentifier(node) && ts.isTypeAliasDeclaration(node.parent) && node.text === name)
+					typeAliasDeclaration = node.parent;
+				node.forEachChild(handleNode);
+			};
+
+			file.forEachChild(handleNode);
+
+			if (!typeAliasDeclaration) {
+				console.error(`${name} was not present in SourceFile after inferring its type`);
+				return;
+			}
 
 			const nodesToCapture: IExcerptBuilderNodeToCapture[] = [];
 
@@ -1433,7 +1459,7 @@ export class ApiModelGenerator {
 			const typeTokenRange: IExcerptTokenRange = ExcerptBuilder.createEmptyTokenRange();
 			nodesToCapture.push({ node: typeAliasDeclaration.type, tokenRange: typeTokenRange });
 
-			const excerptTokens: IExcerptToken[] = this._buildExcerptTokens(internalAstDeclaration, nodesToCapture);
+			const excerptTokens: IExcerptToken[] = this._buildExcerptTokens(astDeclaration, nodesToCapture);
 			const apiItemMetadata: ApiItemMetadata = this._collector.fetchApiItemMetadata(astDeclaration);
 			const docComment: tsdoc.DocComment | undefined = jsDoc
 				? this._tsDocParser.parseString(
