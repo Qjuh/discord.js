@@ -166,8 +166,8 @@ export class CompilerState {
 			// @ts-expect-error assignment to readonly property
 			extractorConfig.mainEntryPointFilePath = path.resolve(
 				tempDir,
-				path.relative(path.dirname(extractorConfig.mainEntryPointFilePath), path.dirname(files[0]!.fileName)),
-				path.basename(files[0]!.fileName),
+				path.relative(path.dirname(extractorConfig.mainEntryPointFilePath), path.dirname(newAnalysisFilePaths[0]!)),
+				path.basename(extractorConfig.mainEntryPointFilePath),
 			);
 		}
 
