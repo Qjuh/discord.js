@@ -2,6 +2,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT license.
 // See LICENSE in the project root for license information.
 
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import * as path from 'node:path';
 import { JsonFile } from '@rushstack/node-core-library';
 import colors from 'colors';
@@ -76,11 +77,98 @@ export class CompilerState {
 
 		const compilerHost: ts.CompilerHost = CompilerState._createCompilerHost(commandLine, options);
 
-		const program: ts.Program = ts.createProgram(analysisFilePaths, commandLine.options, compilerHost);
+		let program: ts.Program = ts.createProgram(analysisFilePaths, commandLine.options, compilerHost);
 
 		if (commandLine.errors.length > 0) {
 			const errorText: string = ts.flattenDiagnosticMessageText(commandLine.errors[0]!.messageText, '\n');
 			throw new Error(`Error parsing tsconfig.json content: ${errorText}`);
+		}
+
+		if (!extractorConfig.mainEntryPointFilePath.includes('dist-docs')) {
+			const typeChecker = program.getTypeChecker();
+			const transformerFactory: ts.TransformerFactory<ts.SourceFile> = (context: ts.TransformationContext) => {
+				return (rootNode) => {
+					function visit<T extends ts.Node>(node: T): T {
+						if (ts.isTypeNode(node) && !ts.isTemplateLiteralTypeNode(node)) {
+							const type = typeChecker.getTypeFromTypeNode(node);
+							if (
+								!type.isUnion() &&
+								!(
+									ts.isTypeReferenceNode(node) &&
+									ts.isIdentifier(node.typeName) &&
+									rootNode.statements.some(
+										(statement) =>
+											ts.isImportDeclaration(statement) &&
+											ts.isStringLiteralLike(statement.moduleSpecifier) &&
+											// ts.resolveModuleName(
+											// 	statement.moduleSpecifier.text,
+											// 	rootNode.fileName,
+											// 	program.getCompilerOptions(),
+											// 	ts.sys,
+											// ).resolvedModule?.isExternalLibraryImport &&
+											statement
+												.getChildren()
+												.find(
+													(clause) =>
+														ts.isImportClause(clause) &&
+														clause.namedBindings &&
+														ts.isNamedImports(clause.namedBindings) &&
+														clause.namedBindings.elements.some(
+															(name) =>
+																ts.isIdentifier(node.typeName) && name.name.escapedText === node.typeName.escapedText,
+														),
+												),
+									)
+								)
+							) {
+								return typeChecker.typeToTypeNode(
+									type,
+									node.parent,
+									ts.NodeBuilderFlags.InTypeAlias | ts.NodeBuilderFlags.NoTruncation,
+								) as T & ts.TypeNode;
+							}
+						} else if (ts.isGetAccessor(node) || ts.isHeritageClause(node) || ts.isTemplateLiteralTypeNode(node)) {
+							return node;
+						}
+
+						return ts.visitEachChild(node, visit, context);
+					}
+
+					return ts.visitNode(rootNode, visit, ts.isSourceFile);
+				};
+			};
+
+			const files = program.getSourceFiles().filter((file) => analysisFilePaths.includes(file.fileName));
+			const printer = ts.createPrinter();
+			const tempDir = path.join(path.dirname(extractorConfig.mainEntryPointFilePath), '..', 'dist-docs');
+
+			if (!existsSync(tempDir)) {
+				mkdirSync(tempDir);
+			}
+
+			const newAnalysisFilePaths = ts
+				.transform(files, [transformerFactory], commandLine.options)
+				.transformed.map((transformedSourceFile, index) => {
+					const fileName = path.join(
+						tempDir,
+						path.relative(
+							path.dirname(extractorConfig.mainEntryPointFilePath),
+							path.dirname(transformedSourceFile.fileName),
+						),
+						path.basename(transformedSourceFile.fileName),
+					);
+					writeFileSync(fileName, printer.printNode(ts.EmitHint.Unspecified, transformedSourceFile, files[index]!));
+					return fileName;
+				});
+
+			program = ts.createProgram(newAnalysisFilePaths, commandLine.options, compilerHost);
+
+			// @ts-expect-error assignment to readonly property
+			extractorConfig.mainEntryPointFilePath = path.resolve(
+				tempDir,
+				path.relative(path.dirname(extractorConfig.mainEntryPointFilePath), path.dirname(files[0]!.fileName)),
+				path.basename(files[0]!.fileName),
+			);
 		}
 
 		return new CompilerState({

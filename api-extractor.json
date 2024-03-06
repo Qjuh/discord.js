@@ -132,7 +132,8 @@
 				"lib": ["ESNext"],
 				"target": "ES2022",
 				"useDefineForClassFields": true
-			}
+			},
+			"exclude": ["dist-docs"]
 		}
 		/**
 		 * This option causes the compiler to be invoked with the --skipLibCheck option. This option is not recommended
