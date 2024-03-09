@@ -92,6 +92,7 @@ export class CompilerState {
 						if (ts.isTypeNode(node) && !ts.isTemplateLiteralTypeNode(node)) {
 							const type = typeChecker.getTypeFromTypeNode(node);
 							if (
+								(type.isIntersection() || ts.isConditionalTypeNode(node)) &&
 								!type.isUnion() &&
 								!(
 									ts.isTypeReferenceNode(node) &&
