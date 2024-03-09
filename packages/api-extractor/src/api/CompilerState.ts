@@ -27,6 +27,8 @@ export interface ICompilerStateCreateOptions {
 	typescriptCompilerFolder?: string | undefined;
 }
 
+const internalTypesToResolve = ['Exclude', 'Extract', 'Uppercase', 'Lowercase', 'Capitalize', 'Uncapitalize'];
+
 /**
  * This class represents the TypeScript compiler state.  This allows an optimization where multiple invocations
  * of API Extractor can reuse the same TypeScript compiler analysis.
@@ -92,35 +94,39 @@ export class CompilerState {
 						if (ts.isTypeNode(node) && !ts.isTemplateLiteralTypeNode(node)) {
 							const type = typeChecker.getTypeFromTypeNode(node);
 							if (
-								(type.isIntersection() || ts.isConditionalTypeNode(node)) &&
-								!type.isUnion() &&
-								!(
-									ts.isTypeReferenceNode(node) &&
+								ts.isConditionalTypeNode(node) ||
+								ts.isMappedTypeNode(node) ||
+								(ts.isTypeReferenceNode(node) &&
 									ts.isIdentifier(node.typeName) &&
-									rootNode.statements.some(
-										(statement) =>
-											ts.isImportDeclaration(statement) &&
-											ts.isStringLiteralLike(statement.moduleSpecifier) &&
-											// ts.resolveModuleName(
-											// 	statement.moduleSpecifier.text,
-											// 	rootNode.fileName,
-											// 	program.getCompilerOptions(),
-											// 	ts.sys,
-											// ).resolvedModule?.isExternalLibraryImport &&
-											statement
-												.getChildren()
-												.find(
-													(clause) =>
-														ts.isImportClause(clause) &&
-														clause.namedBindings &&
-														ts.isNamedImports(clause.namedBindings) &&
-														clause.namedBindings.elements.some(
-															(name) =>
-																ts.isIdentifier(node.typeName) && name.name.escapedText === node.typeName.escapedText,
-														),
-												),
-									)
-								)
+									internalTypesToResolve.includes(node.typeName.getText())) // &&
+								// !ts.isUnionTypeNode(node) &&
+								// !(
+								// 	ts.isTypeReferenceNode(node) &&
+								// 	ts.isIdentifier(node.typeName) &&
+								// 	rootNode.statements.some(
+								// 		(statement) =>
+								// 			ts.isImportDeclaration(statement) &&
+								// 			ts.isStringLiteralLike(statement.moduleSpecifier) &&
+								// 			// ts.resolveModuleName(
+								// 			// 	statement.moduleSpecifier.text,
+								// 			// 	rootNode.fileName,
+								// 			// 	program.getCompilerOptions(),
+								// 			// 	ts.sys,
+								// 			// ).resolvedModule?.isExternalLibraryImport &&
+								// 			statement
+								// 				.getChildren()
+								// 				.find(
+								// 					(clause) =>
+								// 						ts.isImportClause(clause) &&
+								// 						clause.namedBindings &&
+								// 						ts.isNamedImports(clause.namedBindings) &&
+								// 						clause.namedBindings.elements.some(
+								// 							(name) =>
+								// 								ts.isIdentifier(node.typeName) && name.name.escapedText === node.typeName.escapedText,
+								// 						),
+								// 				),
+								// 	)
+								// )
 							) {
 								return typeChecker.typeToTypeNode(
 									type,
