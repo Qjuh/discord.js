@@ -4143,7 +4143,10 @@ export class EntitlementManager extends CachedManager<Snowflake, Entitlement, En
   public deleteTest(entitlement: EntitlementResolvable): Promise<void>;
 }
 
-export interface FetchGuildApplicationCommandFetchOptions extends Omit<FetchApplicationCommandOptions, 'guildId'> {}
+export interface FetchGuildApplicationCommandOptions extends BaseFetchOptions {
+  locale?: LocaleString;
+  withLocalizations?: boolean;
+}
 
 export class GuildApplicationCommandManager extends ApplicationCommandManager<ApplicationCommand, {}, Guild> {
   private constructor(guild: Guild, iterable?: Iterable<RawApplicationCommandData>);
@@ -4154,11 +4157,11 @@ export class GuildApplicationCommandManager extends ApplicationCommandManager<Ap
     command: ApplicationCommandResolvable,
     data: Partial<ApplicationCommandDataResolvable>,
   ): Promise<ApplicationCommand>;
-  public fetch(id: Snowflake, options?: FetchGuildApplicationCommandFetchOptions): Promise<ApplicationCommand>;
-  public fetch(options: FetchGuildApplicationCommandFetchOptions): Promise<Collection<Snowflake, ApplicationCommand>>;
+  public fetch(id: Snowflake, options?: FetchGuildApplicationCommandOptions): Promise<ApplicationCommand>;
+  public fetch(options: FetchGuildApplicationCommandOptions): Promise<Collection<Snowflake, ApplicationCommand>>;
   public fetch(
     id?: undefined,
-    options?: FetchGuildApplicationCommandFetchOptions,
+    options?: FetchGuildApplicationCommandOptions,
   ): Promise<Collection<Snowflake, ApplicationCommand>>;
   public set(commands: readonly ApplicationCommandDataResolvable[]): Promise<Collection<Snowflake, ApplicationCommand>>;
 }
@@ -5492,10 +5495,19 @@ export type EmojiIdentifierResolvable =
 
 export type EmojiResolvable = Snowflake | GuildEmoji | ReactionEmoji;
 
+<<<<<<< HEAD
 export interface FetchApplicationCommandOptions extends BaseFetchOptions {
+=======
+export interface ErrorEvent {
+  error: unknown;
+  message: string;
+  type: string;
+  target: WebSocket;
+}
+
+export interface FetchApplicationCommandOptions extends FetchGuildApplicationCommandOptions {
+>>>>>>> 90bb35a44 (fix: typings)
   guildId?: Snowflake;
-  locale?: LocaleString;
-  withLocalizations?: boolean;
 }
 
 export interface FetchArchivedThreadOptions {
