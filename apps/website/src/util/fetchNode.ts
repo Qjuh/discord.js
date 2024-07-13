@@ -17,7 +17,9 @@ export async function fetchNode({
 		const fileContent = await readFile(
 			join(
 				process.cwd(),
-				`../../packages/${packageName}/docs/${packageName}/split/${version}.${normalizeItem}.api.json`,
+				packageName === 'discord-api-types'
+					? `../../../discord-api-types/docs/${packageName}/split/${version}.${normalizeItem}.api.json`
+					: `../../packages/${packageName}/docs/${packageName}/split/${version}.${normalizeItem}.api.json`,
 			),
 			'utf8',
 		);

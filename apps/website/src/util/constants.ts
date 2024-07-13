@@ -11,6 +11,7 @@ export const PACKAGES = [
 	{ name: 'util' },
 	{ name: 'voice' },
 	{ name: 'ws' },
+	{ name: 'discord-api-types' },
 ];
 
 export const DESCRIPTION =

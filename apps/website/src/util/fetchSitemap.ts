@@ -11,7 +11,12 @@ export async function fetchSitemap({
 }) {
 	if (ENV.IS_LOCAL_DEV) {
 		const fileContent = await readFile(
-			join(process.cwd(), `../../packages/${packageName}/docs/${packageName}/split/${version}.sitemap.api.json`),
+			join(
+				process.cwd(),
+				packageName === 'discord-api-types'
+					? `../../../discord-api-types/docs/${packageName}/split/${version}.sitemap.api.json`
+					: `../../packages/${packageName}/docs/${packageName}/split/${version}.sitemap.api.json`,
+			),
 			'utf8',
 		);
 

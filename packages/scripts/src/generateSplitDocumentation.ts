@@ -51,7 +51,7 @@ import type { DeclarationReference } from '@microsoft/tsdoc/lib-commonjs/beta/De
 import { PACKAGES, fetchVersionDocs, fetchVersions } from './shared.js';
 
 function resolvePackageName(packageName: string) {
-	return packageName === 'discord.js' ? packageName : `@discordjs/${packageName}`;
+	return ['discord.js', 'discord-api-types'].includes(packageName) ? packageName : `@discordjs/${packageName}`;
 }
 
 function findMemberByKey(model: ApiModel, packageName: string, containerKey: string) {
@@ -225,38 +225,38 @@ function resolveItemURI(item: ApiItemLike): string {
 }
 
 function itemExcerptText(excerpt: Excerpt, apiPackage: ApiPackage) {
-	const DISCORD_API_TYPES_VERSION = 'v10';
-	const DISCORD_API_TYPES_DOCS_URL = `https://discord-api-types.dev/api/discord-api-types-${DISCORD_API_TYPES_VERSION}`;
+	// const DISCORD_API_TYPES_VERSION = 'v10';
+	// const DISCORD_API_TYPES_DOCS_URL = `https://discord-api-types.dev/api/discord-api-types-${DISCORD_API_TYPES_VERSION}`;
 
 	return excerpt.spannedTokens.map((token) => {
 		if (token.kind === ExcerptTokenKind.Reference) {
-			const source = token.canonicalReference?.source;
-			const symbol = token.canonicalReference?.symbol;
+			// const source = token.canonicalReference?.source;
+			// const symbol = token.canonicalReference?.symbol;
 
-			if (source && 'packageName' in source && source.packageName === 'discord-api-types' && symbol) {
-				const { meaning, componentPath: path } = symbol;
-				let href = DISCORD_API_TYPES_DOCS_URL;
+			// if (source && 'packageName' in source && source.packageName === 'discord-api-types' && symbol) {
+			// 	const { meaning, componentPath: path } = symbol;
+			// 	let href = DISCORD_API_TYPES_DOCS_URL;
 
-				// dapi-types doesn't have routes for class members
-				// so we can assume this member is for an enum
-				if (meaning === 'member' && path && 'parent' in path) {
-					// unless it's a variable like FormattingPatterns.Role
-					if (path.parent.toString() === '__type') {
-						href += `#${token.text.split('.')[0]}`;
-					} else {
-						href += `/enum/${path.parent}#${path.component}`;
-					}
-				} else if (meaning === 'type' || meaning === 'var') {
-					href += `#${token.text}`;
-				} else {
-					href += `/${meaning}/${token.text}`;
-				}
+			// 	// dapi-types doesn't have routes for class members
+			// 	// so we can assume this member is for an enum
+			// 	if (meaning === 'member' && path && 'parent' in path) {
+			// 		// unless it's a variable like FormattingPatterns.Role
+			// 		if (path.parent.toString() === '__type') {
+			// 			href += `#${token.text.split('.')[0]}`;
+			// 		} else {
+			// 			href += `/enum/${path.parent}#${path.component}`;
+			// 		}
+			// 	} else if (meaning === 'type' || meaning === 'var') {
+			// 		href += `#${token.text}`;
+			// 	} else {
+			// 		href += `/${meaning}/${token.text}`;
+			// 	}
 
-				return {
-					text: token.text,
-					href,
-				};
-			}
+			// 	return {
+			// 		text: token.text,
+			// 		href,
+			// 	};
+			// }
 
 			const resolved = token.canonicalReference
 				? resolveCanonicalReference(token.canonicalReference, apiPackage)
@@ -288,8 +288,8 @@ function itemExcerptText(excerpt: Excerpt, apiPackage: ApiPackage) {
 }
 
 function itemTsDoc(item: DocNode, apiItem: ApiItem) {
-	const DISCORD_API_TYPES_VERSION = 'v10';
-	const DISCORD_API_TYPES_DOCS_URL = `https://discord-api-types.dev/api/discord-api-types-${DISCORD_API_TYPES_VERSION}`;
+	// const DISCORD_API_TYPES_VERSION = 'v10';
+	// const DISCORD_API_TYPES_DOCS_URL = `https://discord-api-types.dev/api/discord-api-types-${DISCORD_API_TYPES_VERSION}`;
 
 	const createNode = (node: DocNode): any => {
 		switch (node.kind) {
@@ -337,28 +337,28 @@ function itemTsDoc(item: DocNode, apiItem: ApiItem) {
 						};
 					}
 
-					if (resolved && resolved.package === 'discord-api-types') {
-						const { displayName, kind, members, containerKey } = resolved.item;
-						let href = DISCORD_API_TYPES_DOCS_URL;
+					// if (resolved && resolved.package === 'discord-api-types') {
+					// 	const { displayName, kind, members, containerKey } = resolved.item;
+					// 	let href = DISCORD_API_TYPES_DOCS_URL;
 
-						// dapi-types doesn't have routes for class members
-						// so we can assume this member is for an enum
-						if (kind === 'enum' && members?.[0]) {
-							href += `/enum/${displayName}#${members[0].displayName}`;
-						} else if (kind === 'type' || kind === 'var') {
-							href += `#${displayName}`;
-						} else {
-							href += `/${kind}/${displayName}`;
-						}
+					// 	// dapi-types doesn't have routes for class members
+					// 	// so we can assume this member is for an enum
+					// 	if (kind === 'enum' && members?.[0]) {
+					// 		href += `/enum/${displayName}#${members[0].displayName}`;
+					// 	} else if (kind === 'type' || kind === 'var') {
+					// 		href += `#${displayName}`;
+					// 	} else {
+					// 		href += `/${kind}/${displayName}`;
+					// 	}
 
-						return {
-							kind: DocNodeKind.LinkTag,
-							text: displayName,
-							containerKey,
-							uri: href,
-							members: members?.map((member) => `.${member.displayName}`).join('') ?? '',
-						};
-					}
+					// 	return {
+					// 		kind: DocNodeKind.LinkTag,
+					// 		text: displayName,
+					// 		containerKey,
+					// 		uri: href,
+					// 		members: members?.map((member) => `.${member.displayName}`).join('') ?? '',
+					// 	};
+					// }
 
 					return {
 						kind: DocNodeKind.LinkTag,
