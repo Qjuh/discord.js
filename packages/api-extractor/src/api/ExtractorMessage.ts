@@ -29,7 +29,7 @@ export interface IExtractorMessageProperties {
  *
  * @public
  */
-export const enum ExtractorMessageCategory {
+export enum ExtractorMessageCategory {
 	/**
 	 * Messages originating from the TypeScript compiler.
 	 *

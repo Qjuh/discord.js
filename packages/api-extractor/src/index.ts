@@ -16,6 +16,7 @@ export { CompilerState, type ICompilerStateCreateOptions } from './api/CompilerS
 export { Extractor, type IExtractorInvokeOptions, ExtractorResult } from './api/Extractor.js';
 
 export {
+	type IExtractorConfigApiReport,
 	type IExtractorConfigPrepareOptions,
 	type IExtractorConfigLoadForFolderOptions,
 	ExtractorConfig,

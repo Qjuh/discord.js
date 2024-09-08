@@ -6,6 +6,7 @@ import * as ts from 'typescript';
 import type { AstEntity } from './AstEntity.js';
 import { AstImport, type IAstImportOptions, AstImportKind } from './AstImport.js';
 import { AstModule, AstModuleExportInfo } from './AstModule.js';
+import { AstNamespaceExport } from './AstNamespaceExport';
 import { AstNamespaceImport } from './AstNamespaceImport.js';
 import { AstSymbol } from './AstSymbol.js';
 import type { IFetchAstSymbolOptions } from './AstSymbolTable.js';
@@ -550,13 +551,8 @@ export class ExportAnalyzer {
 				//   SemicolonToken:  pre=[;]
 
 				// Issue tracking this feature: https://github.com/microsoft/rushstack/issues/2780
-				const namespaceExport: ts.NamespaceExport = declaration as ts.NamespaceExport;
-				exportName = namespaceExport.name.getText().trim();
-				// throw new Error(
-				// 	`The "export * as ___" syntax is not supported yet; as a workaround,` +
-				// 		` use "import * as ___" with a separate "export { ___ }" declaration\n` +
-				// 		SourceFileLocationFormatter.formatDeclaration(declaration),
-				// );
+				const astModule: AstModule = this._fetchSpecifierAstModule(exportDeclaration, declarationSymbol);
+				return this._getAstNamespaceExport(astModule, declarationSymbol, declaration);
 			} else {
 				throw new InternalError(
 					`Unimplemented export declaration kind: ${declaration.getText()}\n` +
@@ -567,33 +563,6 @@ export class ExportAnalyzer {
 			// Ignore "export { A }" without a module specifier
 			if (exportDeclaration.moduleSpecifier) {
 				const externalModulePath: string | undefined = this._tryGetExternalModulePath(exportDeclaration);
-
-				if (declaration.kind === ts.SyntaxKind.NamespaceExport) {
-					if (externalModulePath === undefined) {
-						const astModule: AstModule = this._fetchSpecifierAstModule(exportDeclaration, declarationSymbol);
-						let namespaceImport: AstNamespaceImport | undefined = this._astNamespaceImportByModule.get(astModule);
-						if (namespaceImport === undefined) {
-							namespaceImport = new AstNamespaceImport({
-								namespaceName: declarationSymbol.name,
-								astModule,
-								declaration,
-								symbol: declarationSymbol,
-							});
-							this._astNamespaceImportByModule.set(astModule, namespaceImport);
-						}
-
-						return namespaceImport;
-					}
-
-					// Here importSymbol=undefined because {@inheritDoc} and such are not going to work correctly for
-					// a package or source file.
-					return this._fetchAstImport(undefined, {
-						importKind: AstImportKind.StarImport,
-						exportName,
-						modulePath: externalModulePath,
-						isTypeOnly: exportDeclaration.isTypeOnly,
-					});
-				}
 
 				if (externalModulePath !== undefined) {
 					return this._fetchAstImport(declarationSymbol, {
@@ -609,6 +578,21 @@ export class ExportAnalyzer {
 		}
 
 		return undefined;
+	}
+
+	private _getAstNamespaceExport(
+		astModule: AstModule,
+		declarationSymbol: ts.Symbol,
+		declaration: ts.Declaration,
+	): AstNamespaceExport {
+		const imoprtNamespace: AstNamespaceImport = this._getAstNamespaceImport(astModule, declarationSymbol, declaration);
+
+		return new AstNamespaceExport({
+			namespaceName: imoprtNamespace.localName,
+			astModule,
+			declaration,
+			symbol: declarationSymbol,
+		});
 	}
 
 	private _tryMatchImportDeclaration(declaration: ts.Declaration, declarationSymbol: ts.Symbol): AstEntity | undefined {
@@ -637,18 +621,7 @@ export class ExportAnalyzer {
 
 				if (externalModulePath === undefined) {
 					const astModule: AstModule = this._fetchSpecifierAstModule(importDeclaration, declarationSymbol);
-					let namespaceImport: AstNamespaceImport | undefined = this._astNamespaceImportByModule.get(astModule);
-					if (namespaceImport === undefined) {
-						namespaceImport = new AstNamespaceImport({
-							namespaceName: declarationSymbol.name,
-							astModule,
-							declaration,
-							symbol: declarationSymbol,
-						});
-						this._astNamespaceImportByModule.set(astModule, namespaceImport);
-					}
-
-					return namespaceImport;
+					return this._getAstNamespaceImport(astModule, declarationSymbol, declaration);
 				}
 
 				// Here importSymbol=undefined because {@inheritDoc} and such are not going to work correctly for
@@ -768,6 +741,25 @@ export class ExportAnalyzer {
 		}
 
 		return undefined;
+	}
+
+	private _getAstNamespaceImport(
+		astModule: AstModule,
+		declarationSymbol: ts.Symbol,
+		declaration: ts.Declaration,
+	): AstNamespaceImport {
+		let namespaceImport: AstNamespaceImport | undefined = this._astNamespaceImportByModule.get(astModule);
+		if (namespaceImport === undefined) {
+			namespaceImport = new AstNamespaceImport({
+				namespaceName: declarationSymbol.name,
+				astModule,
+				declaration,
+				symbol: declarationSymbol,
+			});
+			this._astNamespaceImportByModule.set(astModule, namespaceImport);
+		}
+
+		return namespaceImport;
 	}
 
 	private static _getIsTypeOnly(importDeclaration: ts.ImportDeclaration): boolean {

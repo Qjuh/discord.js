@@ -10,7 +10,7 @@
  * when the `ExtractorMessage.category` is {@link ExtractorMessageCategory.Console}.
  * @public
  */
-export const enum ConsoleMessageId {
+export enum ConsoleMessageId {
 	/**
 	 * "You have changed the public API signature for this project.  Updating ___"
 	 */
@@ -69,6 +69,11 @@ export const enum ConsoleMessageId {
 	 * "Using custom TSDoc config from ___"
 	 */
 	UsingCustomTSDocConfig = 'console-using-custom-tsdoc-config',
+
+	/**
+	 * "Generating ___ API report: ___"
+	 */
+	WritingApiReport = 'console-writing-api-report',
 
 	/**
 	 * "Writing: ___"

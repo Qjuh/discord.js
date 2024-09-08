@@ -10,7 +10,7 @@
  * when the `ExtractorMessage.category` is {@link ExtractorMessageCategory.Extractor}.
  * @public
  */
-export const enum ExtractorMessageId {
+export enum ExtractorMessageId {
 	/**
 	 * "The `@inheritDoc` tag for ___ refers to its own declaration."
 	 */

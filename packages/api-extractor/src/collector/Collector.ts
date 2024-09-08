@@ -3,7 +3,14 @@
 
 import { ReleaseTag } from '@discordjs/api-extractor-model';
 import * as tsdoc from '@microsoft/tsdoc';
-import { PackageJsonLookup, Sort, InternalError } from '@rushstack/node-core-library';
+import {
+	PackageJsonLookup,
+	Sort,
+	InternalError,
+	type INodePackageJson,
+	PackageName,
+} from '@rushstack/node-core-library';
+import minimatch from 'minimatch';
 import ts from 'typescript';
 import { PackageDocComment } from '../aedoc/PackageDocComment.js';
 import type { AstDeclaration } from '../analyzer/AstDeclaration.js';
@@ -133,7 +140,11 @@ export class Collector {
 
 		this._tsdocParser = new tsdoc.TSDocParser(this.extractorConfig.tsdocConfiguration);
 
-		this.bundledPackageNames = new Set<string>(this.extractorConfig.bundledPackages);
+		// Resolve package name patterns and store concrete set of bundled package dependency names
+		this.bundledPackageNames = Collector._resolveBundledPackagePatterns(
+			this.extractorConfig.bundledPackages,
+			this.extractorConfig.packageJson,
+		);
 
 		this.astSymbolTable = new AstSymbolTable(
 			this.program,
@@ -145,6 +156,55 @@ export class Collector {
 		this.astReferenceResolver = new AstReferenceResolver(this);
 
 		this._cachedOverloadIndexesByDeclaration = new Map<AstDeclaration, number>();
+	}
+
+	/**
+	 * Resolve provided `bundledPackages` names and glob patterns to a list of explicit package names.
+	 *
+	 * @remarks
+	 * Explicit package names will be included in the output unconditionally. However, wildcard patterns will
+	 * only be matched against the various dependencies listed in the provided package.json (if there was one).
+	 * Patterns will be matched against `dependencies`, `devDependencies`, `optionalDependencies`, and `peerDependencies`.
+	 * @param bundledPackages - The list of package names and/or glob patterns to resolve.
+	 * @param packageJson - The package.json of the package being processed (if there is one).
+	 * @returns The set of resolved package names to be bundled during analysis.
+	 */
+	private static _resolveBundledPackagePatterns(
+		bundledPackages: string[],
+		packageJson: INodePackageJson | undefined,
+	): ReadonlySet<string> {
+		if (bundledPackages.length === 0) {
+			// If no `bundledPackages` were specified, then there is nothing to resolve.
+			// Return an empty set.
+			return new Set<string>();
+		}
+
+		// Accumulate all declared dependencies.
+		// Any wildcard patterns in `bundledPackages` will be resolved against these.
+		const dependencyNames: Set<string> = new Set<string>();
+		for (const dep of Object.keys(packageJson?.dependencies ?? {})) dependencyNames.add(dep);
+		for (const dep of Object.keys(packageJson?.devDependencies ?? {})) dependencyNames.add(dep);
+		for (const dep of Object.keys(packageJson?.peerDependencies ?? {})) dependencyNames.add(dep);
+		for (const dep of Object.keys(packageJson?.optionalDependencies ?? {})) dependencyNames.add(dep);
+
+		// The set of resolved package names to be populated and returned
+		const resolvedPackageNames: Set<string> = new Set<string>();
+
+		for (const packageNameOrPattern of bundledPackages) {
+			// If the string is an exact package name, use it regardless of package.json contents
+			if (PackageName.isValidName(packageNameOrPattern)) {
+				resolvedPackageNames.add(packageNameOrPattern);
+			} else {
+				// If the entry isn't an exact package name, assume glob pattern and search for matches
+				for (const dependencyName of dependencyNames) {
+					if (minimatch(dependencyName, packageNameOrPattern)) {
+						resolvedPackageNames.add(dependencyName);
+					}
+				}
+			}
+		}
+
+		return resolvedPackageNames;
 	}
 
 	/**

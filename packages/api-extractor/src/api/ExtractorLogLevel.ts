@@ -8,7 +8,7 @@
  * This is part of the {@link IConfigFile} structure.
  * @public
  */
-export const enum ExtractorLogLevel {
+export enum ExtractorLogLevel {
 	/**
 	 * The message will be displayed as an error.
 	 *

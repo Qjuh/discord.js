@@ -4,6 +4,7 @@
 import { Sort } from '@rushstack/node-core-library';
 import * as ts from 'typescript';
 import type { AstEntity } from '../analyzer/AstEntity.js';
+import { AstNamespaceExport } from '../analyzer/AstNamespaceExport';
 import { AstSymbol } from '../analyzer/AstSymbol.js';
 import { Collector } from './Collector.js';
 
@@ -85,6 +86,11 @@ export class CollectorEntity {
 	 * such as "export class X \{ \}" instead of "export \{ X \}".
 	 */
 	public get shouldInlineExport(): boolean {
+		// We export the namespace directly
+		if (this.astEntity instanceof AstNamespaceExport) {
+			return true;
+		}
+
 		// We don't inline an AstImport
 		return (
 			this.astEntity instanceof AstSymbol && // We don't inline a symbol with more than one exported name
