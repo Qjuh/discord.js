@@ -10,8 +10,8 @@ export async function SummaryNode({
 	readonly version: string;
 }) {
 	return (
-		<p className={`break-words ${padding ? 'pl-4' : ''}`}>
+		<div className={`break-words ${padding ? 'pl-4' : ''}`}>
 			<DocNode node={node} version={version} />
-		</p>
+		</div>
 	);
 }

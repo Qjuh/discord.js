@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { MDXRemote } from 'next-mdx-remote-client/rsc';
+import remarkGfm from 'remark-gfm';
 import { BuiltinDocumentationLinks } from '~/util/builtinDocumentationLinks';
 import { OverlayScrollbarsComponent } from './OverlayScrollbars';
 import { SyntaxHighlighter } from './SyntaxHighlighter';
@@ -7,50 +9,74 @@ export async function DocNode({ node, version }: { readonly node?: any; readonly
 	const createNode = (node: any, idx: number) => {
 		switch (node.kind) {
 			case 'PlainText':
-				return <span key={`${node.text}-${idx}`}>{node.text}</span>;
+				return (
+					<>
+						<MDXRemote
+							key={`${node.text}-${idx}`}
+							components={{
+								// eslint-disable-next-line id-length, react/no-unstable-nested-components
+								p(props) {
+									return <span {...props} />;
+								},
+							}}
+							options={{
+								mdxOptions: {
+									remarkPlugins: [remarkGfm],
+								},
+							}}
+							source={`${node.text}`}
+						/>{' '}
+					</>
+				);
 			case 'LinkTag': {
 				if (node.resolvedPackage) {
 					return (
-						<Link
-							key={`${node.text}-${idx}`}
-							className="font-mono text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
-							href={`/docs/packages/${node.resolvedPackage.packageName}/${node.resolvedPackage.version ?? version}/${node.uri}`}
-						>
-							{node.text}
-						</Link>
+						<>
+							<Link
+								key={`${node.text}-${idx}`}
+								className="font-mono text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
+								href={`/docs/packages/${node.resolvedPackage.packageName}/${node.resolvedPackage.version ?? version}/${node.uri}`}
+							>
+								{node.text}
+							</Link>{' '}
+						</>
 					);
 				}
 
 				if (node.uri) {
 					return (
-						<a
-							key={`${node.text}-${idx}`}
-							className="text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
-							href={node.uri}
-							rel="external noreferrer noopener"
-							target="_blank"
-						>
-							{`${node.text}${node.members ?? ''}`}
-						</a>
+						<>
+							<a
+								key={`${node.text}-${idx}`}
+								className="text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
+								href={node.uri}
+								rel="external noreferrer noopener"
+								target="_blank"
+							>
+								{`${node.text}${node.members ?? ''}`}
+							</a>{' '}
+						</>
 					);
 				}
 
 				if (node.text in BuiltinDocumentationLinks) {
 					const href = BuiltinDocumentationLinks[node.text as keyof typeof BuiltinDocumentationLinks];
 					return (
-						<a
-							key={`${node.text}-${idx}`}
-							className="text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
-							href={href}
-							rel="external noreferrer noopener"
-							target="_blank"
-						>
-							{node.text}
-						</a>
+						<>
+							<a
+								key={`${node.text}-${idx}`}
+								className="text-blurple hover:text-blurple-500 dark:hover:text-blurple-300"
+								href={href}
+								rel="external noreferrer noopener"
+								target="_blank"
+							>
+								{node.text}
+							</a>{' '}
+						</>
 					);
 				}
 
-				return <span key={`${node.text}-${idx}`}>{node.text}</span>;
+				return <span key={`${node.text}-${idx}`}>{node.text} </span>;
 			}
 
 			case 'CodeSpan':

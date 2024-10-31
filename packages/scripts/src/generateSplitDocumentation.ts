@@ -47,6 +47,7 @@ import type {
 	DocLinkTag,
 	DocFencedCode,
 	DocComment,
+	DocErrorText,
 } from '@microsoft/tsdoc';
 import type { DeclarationReference } from '@microsoft/tsdoc/lib-commonjs/beta/DeclarationReference.js';
 import { BuiltinDocumentationLinks } from './builtinDocumentationLinks.js';
@@ -469,38 +470,43 @@ function itemTsDoc(item: DocNode, apiItem: ApiItem) {
 					deprecatedBlock: comment.deprecatedBlock
 						? createNode(comment.deprecatedBlock.content)
 								.flat(1)
-								.filter((val: any) => val.kind !== DocNodeKind.SoftBreak)
+								.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak)
 						: [],
 					summarySection: comment.summarySection
 						? createNode(comment.summarySection)
 								.flat(1)
-								.filter((val: any) => val.kind !== DocNodeKind.SoftBreak)
+								.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak)
 						: [],
 					remarksBlock: comment.remarksBlock
 						? createNode(comment.remarksBlock.content)
 								.flat(1)
-								.filter((val: any) => val.kind !== DocNodeKind.SoftBreak)
+								.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak)
 						: [],
 					defaultValueBlock: defaultValueBlock
 						? createNode(defaultValueBlock.content)
 								.flat(1)
-								.filter((val: any) => val.kind !== DocNodeKind.SoftBreak)
+								.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak)
 						: [],
 					returnsBlock: comment.returnsBlock
 						? createNode(comment.returnsBlock.content)
 								.flat(1)
-								.filter((val: any) => val.kind !== DocNodeKind.SoftBreak)
+								.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak)
 						: [],
 					exampleBlocks: exampleBlocks
 						.flatMap((block) => createNode(block.content).flat(1))
-						.filter((val: any) => val.kind !== DocNodeKind.SoftBreak),
+						.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak),
 					seeBlocks: comment.seeBlocks
 						.flatMap((block) => createNode(block.content).flat(1))
-						.filter((val: any) => val.kind !== DocNodeKind.SoftBreak),
+						.filter((val: any) => val.kind && val.kind !== DocNodeKind.SoftBreak),
 				};
 			}
 
-			default:
+			case DocNodeKind.HtmlStartTag:
+			case DocNodeKind.HtmlEndTag:
+				return {};
+
+			case DocNodeKind.ErrorText:
+				console.log(node.kind, (node as DocErrorText).errorMessage, (node as DocErrorText).text, apiItem.displayName);
 				return {};
 		}
 	};

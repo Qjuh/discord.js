@@ -1270,7 +1270,7 @@ export class ApiModelGenerator {
 				const apiItemMetadata: ApiItemMetadata = this._collector.fetchApiItemMetadata(astDeclaration);
 				const docComment: tsdoc.DocComment | undefined = jsDoc
 					? this._tsDocParser.parseString(
-							`/**\n * ${this._fixLinkTags(jsDoc.description) ?? ''}${jsDoc.default ? ` (default: ${this._escapeSpecialChars(jsDoc.default)})` : ''}\n${
+							`/**\n * ${this._fixLinkTags(jsDoc.description) ?? ''}${jsDoc.default ? `\n * @defaultValue ${this._escapeSpecialChars(jsDoc.default)})` : ''}\n${
 								'see' in jsDoc ? jsDoc.see.map((see) => ` * @see ${see}\n`).join('') : ''
 							}${'readonly' in jsDoc && jsDoc.readonly ? ' * @readonly\n' : ''}${
 								'deprecated' in jsDoc && jsDoc.deprecated
@@ -1765,7 +1765,7 @@ export class ApiModelGenerator {
 			return input;
 		}
 
-		return input.replaceAll(/(?<char>[@{}])/g, '\\$<char>');
+		return input.replaceAll(/(?<char>[<>@{}])/g, '\\$<char>');
 	}
 
 	private _fixLinkTags(input?: string): string | undefined {
@@ -1784,7 +1784,7 @@ export class ApiModelGenerator {
 
 				return `{@link ${target}${groups.prop ? `.${groups.prop}` : ''}${groups.name ? ` |${groups.name}` : ''}}`;
 			})
-			.replaceAll('* ', '\n * * ');
+			.replaceAll(/\n ?\*/g, '\n * * ');
 	}
 
 	private _mapVarType(typey: DocgenVarTypeJson, nullable?: boolean): IExcerptToken[] {

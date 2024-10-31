@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import rehypeShikiFromHighlighter from '@shikijs/rehype/core';
 import { MDXRemote } from 'next-mdx-remote-client/rsc';
 import remarkGfm from 'remark-gfm';
-import { getHighlighterCore } from 'shiki/core';
+import { getSingletonHighlighterCore } from 'shiki/core';
 import getWasm from 'shiki/wasm';
 
-const highlighter = await getHighlighterCore({
+const highlighter = await getSingletonHighlighterCore({
 	themes: [import('shiki/themes/github-light.mjs'), import('shiki/themes/github-dark-dimmed.mjs')],
 	langs: [
 		import('shiki/langs/typescript.mjs'),
