@@ -3,11 +3,11 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"jsx": "preserve",
-		"baseUrl": ".",
 		"outDir": "dist",
 		"noEmit": true,
 		"skipLibCheck": true,
 		"paths": {
+			"*": ["./*"],
 			"~/*": ["./src/*"]
 		}
 	},

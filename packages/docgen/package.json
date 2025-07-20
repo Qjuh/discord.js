@@ -78,7 +78,7 @@
 		"terser": "^5.46.1",
 		"tsup": "^8.5.1",
 		"turbo": "^2.8.21",
-		"typescript": "~5.9.3"
+		"typescript": "^7.0.2"
 	},
 	"engines": {
 		"node": ">=24.17.0"

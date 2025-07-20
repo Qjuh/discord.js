@@ -70,9 +70,9 @@
 		"prettier": "^3.8.1",
 		"tsup": "^8.5.1",
 		"turbo": "^2.8.21",
-		"typescript": "~5.9.3",
 		"typescript-eslint": "^8.57.2",
 		"unocss": "^66.6.7",
+		"typescript": "^7.0.2",
 		"vercel": "^50.37.3",
 		"vitest": "^4.1.2"
 	},
